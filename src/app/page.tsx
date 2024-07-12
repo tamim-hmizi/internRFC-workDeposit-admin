@@ -1,36 +1,24 @@
-
-"use client";
-import React, { useState, useRef, useEffect } from 'react';
+"use client"
+import React, { useState, useRef } from 'react';
 import {
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  Box,
-  Input,
-  InputGroup,
-  InputRightElement,
-  IconButton,
-  Flex,
-} from '@chakra-ui/react';
+  Table, Thead, Tbody, Tr, Th, Td, TableContainer, Box, Input, InputGroup, InputRightElement, IconButton, Flex, Stack, Button,} from '@chakra-ui/react';
 import { ViewIcon, Search2Icon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import './globals.css';
 import AlertDialogComponent from '@/component/AlertDialog/page';
+import DateDialogComponent from '@/component/DateDialog/page'
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [startIndex, setStartIndex] = useState(0);
   const cancelRef = useRef();
 
   const values = {
-    Thème: "Example Theme",
-    Date: "2024-07-12",
+    Thème: 'Example Theme',
+    Date: '2024-07-12',
     Avancement: 50,
-    Tâche: "Example Task"
+    Tâche: 'Example Task',
   };
 
   const handleSearchChange = (event) => {
@@ -53,9 +41,10 @@ export default function Home() {
     { name: 'Sami', encadrant: 'Mohamed Achref Chourabi' },
   ];
 
-  const filteredData = data.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.encadrant.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredData = data.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.encadrant.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pageSize = 5;
@@ -73,9 +62,19 @@ export default function Home() {
     setStartIndex(startIndex + pageSize);
   };
 
-  useEffect(() => {
-    setStartIndex(0);
-  }, [searchQuery]);
+  const openDateDialog = () => {
+    setIsDateDialogOpen(true);
+  };
+
+  const closeDateDialog = () => {
+    setIsDateDialogOpen(false);
+  };
+
+  const openTodayDialog = (date) => {
+    console.log('Opening dialog for:', date);
+    setIsDialogOpen(true); 
+    setIsDateDialogOpen(false); 
+  };
 
   return (
     <Flex>
@@ -101,7 +100,7 @@ export default function Home() {
         </Flex>
 
         <TableContainer>
-          <Table size='sm'>
+          <Table size="sm">
             <Thead>
               <Tr>
                 <Th>Nom Prénom</Th>
@@ -115,9 +114,26 @@ export default function Home() {
                   <Td>{item.name}</Td>
                   <Td>{item.encadrant}</Td>
                   <Td>
-                    <div className="icon-rectangle" onClick={() => setIsDialogOpen(true)}>
-                      <ViewIcon />
-                    </div>
+                    <Stack direction="row" spacing={4}>
+                      <Button
+                        leftIcon={<ViewIcon />}
+                        colorScheme="blue"
+                        variant="solid"
+                        size="sm"
+                        onClick={() => setIsDialogOpen(true)}
+                      >
+                        Voir aujourd'hui
+                      </Button>
+                      <Button
+                        leftIcon={<ViewIcon />}
+                        colorScheme="yellow"
+                        variant="solid"
+                        size="sm"
+                        onClick={openDateDialog}
+                      >
+                        Voir tout
+                      </Button>
+                    </Stack>
                   </Td>
                 </Tr>
               ))}
@@ -142,6 +158,12 @@ export default function Home() {
             display={endIndex >= filteredData.length ? 'none' : 'block'}
           />
         </Flex>
+
+        <DateDialogComponent
+          isOpen={isDateDialogOpen}
+          onClose={closeDateDialog}
+          onOpenToday={openTodayDialog}
+        />
 
         <AlertDialogComponent
           isOpen={isDialogOpen}
