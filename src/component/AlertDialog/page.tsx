@@ -1,4 +1,3 @@
-// components/AlertDialogComponent.tsx
 "use client";
 import React from 'react';
 import {
@@ -21,23 +20,19 @@ const AlertDialogComponent = ({ isOpen, onClose, cancelRef, values }) => {
             Rapport de travail
           </AlertDialogHeader>
           <AlertDialogBody>
-            <Text>
-              <strong>Thème:</strong> {values.Thème}
-            </Text>
-            <Text>
-              <strong>Date:</strong> {values.Date}
-            </Text>
-            <Text>
-              <strong>Avancement:</strong> {values.Avancement}%
-            </Text>
-            <Text>
-              <strong>Tâche:</strong> {values.Tâche}
-            </Text>
+            {values.message ? (
+              <Text>{values.message}</Text>
+            ) : (
+              <>
+                <Text><strong>Thème:</strong> {values.Thème}</Text>
+                <Text><strong>Date:</strong> {values.Date}</Text>
+                <Text><strong>Avancement:</strong> {values.Avancement}%</Text>
+                <Text><strong>Tâche:</strong> {values.Tâche}</Text>
+              </>
+            )}
           </AlertDialogBody>
           <AlertDialogFooter>
-            <Button onClick={onClose} colorScheme="blue" ml={3}>
-              Fermer
-            </Button>
+            <Button colorScheme="blue" onClick={onClose} ml={3}>OK</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialogOverlay>

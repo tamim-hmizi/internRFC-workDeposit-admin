@@ -1,50 +1,48 @@
-"use client"
-import React, { useState, useRef } from 'react';
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Table, Thead, Tbody, Tr, Th, Td, TableContainer, Box, Input, InputGroup, InputRightElement, IconButton, Flex, Stack, Button,} from '@chakra-ui/react';
+  Table, Thead, Tbody, Tr, Th, Td, TableContainer, Box, Input, InputGroup, InputRightElement, IconButton, Flex, Stack, Button,
+} from '@chakra-ui/react';
 import { ViewIcon, Search2Icon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import './globals.css';
 import AlertDialogComponent from '@/component/AlertDialog/page';
-import DateDialogComponent from '@/component/DateDialog/page'
+import DateDialogComponent from '@/component/DateDialog/page';
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
+  const [reportDates, setReportDates] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [startIndex, setStartIndex] = useState(0);
+  const [data, setData] = useState([]);
+  const [reports, setReports] = useState({ todaysReports: [], reportsByDate: {} });
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const cancelRef = useRef();
 
-  const values = {
-    Thème: 'Example Theme',
-    Date: '2024-07-12',
-    Avancement: 50,
-    Tâche: 'Example Task',
-  };
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/user');
+        const result = await response.json();
+        setData(result.map(user => ({ id: user.id, name: user.name })));
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
     setStartIndex(0);
   };
 
-  const data = [
-    { name: 'Salma ksantini', encadrant: 'Mohamed Achref Chourabi' },
-    { name: 'Tamim Hmizi', encadrant: 'Mohamed Achref Chourabi' },
-    { name: 'Farah', encadrant: 'Anis' },
-    { name: 'Nour', encadrant: 'Ali' },
-    { name: 'Ahmed', encadrant: 'Youssef' },
-    { name: 'Mohamed', encadrant: 'Olfa' },
-    { name: 'Amine', encadrant: 'Eya' },
-    { name: 'Salah', encadrant: 'Eya' },
-    { name: 'Yassine', encadrant: 'Ali' },
-    { name: 'Sami', encadrant: 'Mohamed Achref Chourabi' },
-    { name: 'Yassine', encadrant: 'Ali' },
-    { name: 'Sami', encadrant: 'Mohamed Achref Chourabi' },
-  ];
-
   const filteredData = data.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.encadrant.toLowerCase().includes(searchQuery.toLowerCase())
+    (item) => item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pageSize = 5;
@@ -62,23 +60,55 @@ export default function Home() {
     setStartIndex(startIndex + pageSize);
   };
 
-  const openDateDialog = () => {
-    setIsDateDialogOpen(true);
+  const openDateDialog = async (userId) => {
+    setSelectedUserId(userId);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/rapport?personId=${userId}`);
+      const result = await response.json();
+      setReportDates(Object.keys(result.reportsByDate));
+      setIsDateDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching report dates:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const closeDateDialog = () => {
-    setIsDateDialogOpen(false);
+  const openTodayDialog = async (userId) => {
+    setSelectedUserId(userId);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/rapport?personId=${userId}`);
+      const result = await response.json();
+      setReports({
+        todaysReports: result.todaysReports,
+        reportsByDate: result.reportsByDate,
+      });
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const openTodayDialog = (date) => {
-    console.log('Opening dialog for:', date);
-    setIsDialogOpen(true); 
-    setIsDateDialogOpen(false); 
+  const handleSelectDate = async (selectedDate) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/rapport?personId=${selectedUserId}&date=${selectedDate}`);
+      const result = await response.json();
+      setReports({ todaysReports: [], reportsByDate: { [selectedDate]: result } });
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <Flex>
-      {/* Main content */}
       <Box flex="1" p={4}>
         <Flex justify="flex-end" mb={4}>
           <Box width="300px">
@@ -104,15 +134,13 @@ export default function Home() {
             <Thead>
               <Tr>
                 <Th>Nom Prénom</Th>
-                <Th>Encadrant</Th>
                 <Th>Rapport de travail</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {displayedData.map((item, index) => (
-                <Tr key={index}>
+              {displayedData.map((item) => (
+                <Tr key={item.id}>
                   <Td>{item.name}</Td>
-                  <Td>{item.encadrant}</Td>
                   <Td>
                     <Stack direction="row" spacing={4}>
                       <Button
@@ -120,7 +148,10 @@ export default function Home() {
                         colorScheme="blue"
                         variant="solid"
                         size="sm"
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={() => openTodayDialog(item.id)}
+                        isLoading={isLoading}
+                        loadingText="Loading"
+                        spinnerPlacement="start"
                       >
                         Voir aujourd'hui
                       </Button>
@@ -129,7 +160,10 @@ export default function Home() {
                         colorScheme="yellow"
                         variant="solid"
                         size="sm"
-                        onClick={openDateDialog}
+                        onClick={() => openDateDialog(item.id)}
+                        isLoading={isLoading}
+                        loadingText="Loading"
+                        spinnerPlacement="start"
                       >
                         Voir tout
                       </Button>
@@ -141,7 +175,6 @@ export default function Home() {
           </Table>
         </TableContainer>
 
-        {/* Navigation buttons */}
         <Flex mt={4} justify="space-between">
           <IconButton
             aria-label="Previous"
@@ -161,15 +194,16 @@ export default function Home() {
 
         <DateDialogComponent
           isOpen={isDateDialogOpen}
-          onClose={closeDateDialog}
-          onOpenToday={openTodayDialog}
+          onClose={() => setIsDateDialogOpen(false)}
+          onSelectDate={handleSelectDate}
+          dates={reportDates}
         />
 
         <AlertDialogComponent
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           cancelRef={cancelRef}
-          values={values}
+          values={reports.todaysReports.length ? reports.todaysReports[0] : { message: 'Pas de rapport déposé aujourd\'hui' }}
         />
       </Box>
     </Flex>
