@@ -3,6 +3,10 @@ import { unmarshall } from '@aws-sdk/util-dynamodb';
 
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 
+/*import AWS from 'aws-sdk';
+import {QueryCommand} from '@aws-sdk/client-dynamodb';
+const dynamoClient = new AWS.DynamoDB.DocumentClient();*/
+
 export default async function handler(req, res) {
   const { personId, date } = req.query;
 
@@ -27,7 +31,7 @@ export default async function handler(req, res) {
 async function getReportsByDate(personId, date) {
   const params = {
     TableName: 'WorkRapport',
-    IndexName: 'PersonIdDateIndex', // Assumes you have a GSI with personId and date
+    IndexName: 'personId-Date-index',
     KeyConditionExpression: 'personId = :personId AND #date = :date',
     ExpressionAttributeValues: {
       ':personId': { S: personId },
@@ -48,10 +52,10 @@ async function getReportsByDate(personId, date) {
 async function getReportsByPersonId(personId) {
   const params = {
     TableName: 'WorkRapport',
-    IndexName: 'PersonIdIndex', // Assumes you have a GSI with personId
+    IndexName: 'personId-index',
     KeyConditionExpression: 'personId = :personId',
     ExpressionAttributeValues: {
-      ':personId': { N: personId },
+      ':personId': { S: personId },
     },
   };
 

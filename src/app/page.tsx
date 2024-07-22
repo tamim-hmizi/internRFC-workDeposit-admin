@@ -7,6 +7,7 @@ import { ViewIcon, Search2Icon, ChevronLeftIcon, ChevronRightIcon } from '@chakr
 import './globals.css';
 import AlertDialogComponent from '@/component/AlertDialog/page';
 import DateDialogComponent from '@/component/DateDialog/page';
+import AlertDialogDateComponent from '@/component/AlertDialogDate/page';
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -16,7 +17,8 @@ export default function Home() {
   const [startIndex, setStartIndex] = useState(0);
   const [data, setData] = useState([]);
   const [reports, setReports] = useState({ todaysReports: [], reportsByDate: {} });
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedpersonId, setSelectedUserId] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const cancelRef = useRef();
 
@@ -26,7 +28,8 @@ export default function Home() {
       try {
         const response = await fetch('/api/user');
         const result = await response.json();
-        setData(result.map(user => ({ id: user.id, name: user.name })));
+        console.log('API response:', result);
+        setData(result.map(user => ({ email: user.email, name: user.name })));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -48,7 +51,7 @@ export default function Home() {
   const pageSize = 5;
   const endIndex = startIndex + pageSize;
   const displayedData = filteredData.slice(startIndex, endIndex);
-
+  console.log('Displayed Data:', displayedData);
   const canGoPrevious = startIndex > 0;
   const canGoNext = endIndex < filteredData.length;
 
@@ -60,14 +63,15 @@ export default function Home() {
     setStartIndex(startIndex + pageSize);
   };
 
-  const openDateDialog = async (userId) => {
-    setSelectedUserId(userId);
+  const openDateDialog = async (personId) => {
+    setSelectedUserId(personId);
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/rapport?personId=${userId}`);
+      const response = await fetch(`/api/rapport?personId=${personId}`);
       const result = await response.json();
       setReportDates(Object.keys(result.reportsByDate));
       setIsDateDialogOpen(true);
+      setIsDialogOpen(false); // Fermer l'autre dialogue
     } catch (error) {
       console.error('Error fetching report dates:', error);
     } finally {
@@ -75,31 +79,47 @@ export default function Home() {
     }
   };
 
-  const openTodayDialog = async (userId) => {
-    setSelectedUserId(userId);
+  const openTodayDialog = async (personId) => {
+    setSelectedUserId(personId);
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/rapport?personId=${userId}`);
+      const response = await fetch(`/api/rapport?personId=${personId}`);
       const result = await response.json();
       setReports({
         todaysReports: result.todaysReports,
         reportsByDate: result.reportsByDate,
       });
       setIsDialogOpen(true);
+      setIsDateDialogOpen(false); // Fermer l'autre dialogue
     } catch (error) {
-      console.error('Error fetching reports:', error);
+      console.error('Error fetching today\'s reports:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSelectDate = async (selectedDate) => {
+    setSelectedDate(selectedDate); // Assurez-vous que cette ligne est présente
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/rapport?personId=${selectedUserId}&date=${selectedDate}`);
+      const response = await fetch(`/api/rapport?personId=${selectedpersonId}`);
       const result = await response.json();
-      setReports({ todaysReports: [], reportsByDate: { [selectedDate]: result } });
-      setIsDialogOpen(true);
+      console.log('Result from API for selected date:', result);
+      console.log(result.reportsByDate[selectedDate]);
+      
+      // Extraire le rapport pour la date sélectionnée
+      const reportsForSelectedDate = result.reportsByDate[selectedDate] || [];
+      console.log('ext:', reportsForSelectedDate);
+      
+      // Assurez-vous que le tableau n'est pas vide
+      if (reportsForSelectedDate.length > 0) {
+        setReports({ todaysReports: [], reportsByDate: { [selectedDate]: reportsForSelectedDate } });
+      } else {
+        setReports({ todaysReports: [], reportsByDate: { [selectedDate]: [{ message: 'Pas de rapport pour cette date' }] } });
+      }
+      
+      setIsDialogOpen(false); // Fermer l'autre dialogue
+      setIsDateDialogOpen(true);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {
@@ -139,7 +159,7 @@ export default function Home() {
             </Thead>
             <Tbody>
               {displayedData.map((item) => (
-                <Tr key={item.id}>
+                <Tr key={item.email}>
                   <Td>{item.name}</Td>
                   <Td>
                     <Stack direction="row" spacing={4}>
@@ -148,7 +168,7 @@ export default function Home() {
                         colorScheme="blue"
                         variant="solid"
                         size="sm"
-                        onClick={() => openTodayDialog(item.id)}
+                        onClick={() => openTodayDialog(item.email)}
                         isLoading={isLoading}
                         loadingText="Loading"
                         spinnerPlacement="start"
@@ -160,7 +180,7 @@ export default function Home() {
                         colorScheme="yellow"
                         variant="solid"
                         size="sm"
-                        onClick={() => openDateDialog(item.id)}
+                        onClick={() => openDateDialog(item.email)}
                         isLoading={isLoading}
                         loadingText="Loading"
                         spinnerPlacement="start"
@@ -203,7 +223,14 @@ export default function Home() {
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           cancelRef={cancelRef}
-          values={reports.todaysReports.length ? reports.todaysReports[0] : { message: 'Pas de rapport déposé aujourd\'hui' }}
+          values={reports.todaysReports ? reports.todaysReports[0] : { message: 'Pas de rapport déposé aujourd\'hui' }}
+        />
+
+        <AlertDialogDateComponent
+          isOpen={isDateDialogOpen && !!selectedDate} // Ajustez ici
+          onClose={() => setSelectedDate(null)}
+          cancelRef={cancelRef}
+          values={reports.reportsByDate[selectedDate] ? reports.reportsByDate[selectedDate][0] : { message: 'Pas de rapport pour cette date' }}
         />
       </Box>
     </Flex>

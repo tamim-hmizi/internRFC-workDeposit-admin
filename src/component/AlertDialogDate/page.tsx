@@ -16,6 +16,7 @@ const AlertDialogComponent = ({ isOpen, onClose, cancelRef, values }) => {
   const safeValues = values || {};
 
   return (
+    
     <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
       <AlertDialogOverlay>
         <AlertDialogContent>
