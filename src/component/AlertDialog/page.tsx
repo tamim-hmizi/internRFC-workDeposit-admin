@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   AlertDialog,
   AlertDialogOverlay,
@@ -11,7 +11,20 @@ import {
   Text,
 } from '@chakra-ui/react';
 
-const AlertDialogComponent = ({ isOpen, onClose, cancelRef, values }) => {
+interface AlertDialogComponentProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cancelRef: React.RefObject<HTMLButtonElement>;
+  values: {
+    message?: string;
+    Theme?: string;
+    Date?: string;
+    Avancement?: string;
+    Tâche?: string;
+  };
+}
+
+const AlertDialogComponent: React.FC<AlertDialogComponentProps> = ({ isOpen, onClose, cancelRef, values }) => {
   console.log('AlertDialog Values:', values);
   const safeValues = values || {};
 
@@ -35,7 +48,7 @@ const AlertDialogComponent = ({ isOpen, onClose, cancelRef, values }) => {
             )}
           </AlertDialogBody>
           <AlertDialogFooter>
-            <Button colorScheme="blue" onClick={onClose} ml={3}>OK</Button>
+            <Button colorScheme="blue" onClick={onClose} ml={3} ref={cancelRef}>OK</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialogOverlay>

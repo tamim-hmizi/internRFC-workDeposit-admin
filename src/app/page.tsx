@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { ChangeEvent } from 'react';
 import {
   Table, Thead, Tbody, Tr, Th, Td, TableContainer, Box, Input, InputGroup, InputRightElement, IconButton, Flex, Stack, Button,
 } from '@chakra-ui/react';
@@ -9,25 +10,56 @@ import AlertDialogComponent from '@/component/AlertDialog/page';
 import DateDialogComponent from '@/component/DateDialog/page';
 import AlertDialogDateComponent from '@/component/AlertDialogDate/page';
 
+interface User {
+  name: string, 
+  email: string
+}
+interface DataState {
+  data: User[];
+  isLoading: boolean;
+}
+
+const initialState: DataState = {
+  data: [],
+  isLoading: false,
+};
+
+interface Report {
+  message: string;
+}
+
+interface ReportsByDate {
+  [date: string]: Report[];
+}
+
+interface Reports {
+  todaysReports: Report[];
+  reportsByDate: ReportsByDate;
+}
+
+
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
-  const [reportDates, setReportDates] = useState([]);
+  const [reportDates, setReportDates] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [startIndex, setStartIndex] = useState(0);
-  const [data, setData] = useState([]);
-  const [reports, setReports] = useState({ todaysReports: [], reportsByDate: {} });
-  const [selectedpersonId, setSelectedUserId] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const cancelRef = useRef();
+  const [data, setData] = useState<User[]>(initialState.data);
+  const [reports, setReports] = useState<Reports>({
+    todaysReports: [],
+    reportsByDate: {},
+  });
+  const [selectedpersonId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(initialState.isLoading);
 
+  const cancelRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       try {
         const response = await fetch('/api/user');
-        const result = await response.json();
+        const result: User[] = await response.json();
         console.log('API response:', result);
         setData(result.map(user => ({ email: user.email, name: user.name })));
       } catch (error) {
@@ -39,7 +71,7 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const handleSearchChange = (event) => {
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
     setStartIndex(0);
   };
@@ -63,7 +95,7 @@ export default function Home() {
     setStartIndex(startIndex + pageSize);
   };
 
-  const openDateDialog = async (personId) => {
+  const openDateDialog = async (personId:string) => {
     setSelectedUserId(personId);
     setIsLoading(true);
     try {
@@ -79,7 +111,7 @@ export default function Home() {
     }
   };
 
-  const openTodayDialog = async (personId) => {
+  const openTodayDialog = async (personId:string) => {
     setSelectedUserId(personId);
     setIsLoading(true);
     try {
@@ -98,8 +130,8 @@ export default function Home() {
     }
   };
 
-  const handleSelectDate = async (selectedDate) => {
-    setSelectedDate(selectedDate); // Assurez-vous que cette ligne est présente
+  const handleSelectDate = async (selectedDate:string) => {
+    setSelectedDate(selectedDate);
     setIsLoading(true);
     try {
       const response = await fetch(`/api/rapport?personId=${selectedpersonId}`);
@@ -173,7 +205,7 @@ export default function Home() {
                         loadingText="Loading"
                         spinnerPlacement="start"
                       >
-                        Voir aujourd'hui
+                        Voir aujourd&rsquo;hui
                       </Button>
                       <Button
                         leftIcon={<ViewIcon />}
@@ -226,12 +258,16 @@ export default function Home() {
           values={reports.todaysReports ? reports.todaysReports[0] : { message: 'Pas de rapport déposé aujourd\'hui' }}
         />
 
-        <AlertDialogDateComponent
-          isOpen={isDateDialogOpen && !!selectedDate} // Ajustez ici
-          onClose={() => setSelectedDate(null)}
-          cancelRef={cancelRef}
-          values={reports.reportsByDate[selectedDate] ? reports.reportsByDate[selectedDate][0] : { message: 'Pas de rapport pour cette date' }}
-        />
+<AlertDialogDateComponent
+  isOpen={isDateDialogOpen && selectedDate !== null} // Adjusted to ensure selectedDate is not null
+  onClose={() => setSelectedDate(null)}
+  cancelRef={cancelRef}
+  values={
+    selectedDate && reports.reportsByDate[selectedDate]
+      ? reports.reportsByDate[selectedDate][0]
+      : { message: 'Pas de rapport pour cette date' }
+  }
+/>
       </Box>
     </Flex>
   );

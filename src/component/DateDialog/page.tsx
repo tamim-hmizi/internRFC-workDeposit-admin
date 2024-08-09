@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent, useRef } from 'react';
 import {
   AlertDialog,
   AlertDialogOverlay,
@@ -18,20 +18,30 @@ import {
 } from '@chakra-ui/react';
 import { Search2Icon } from '@chakra-ui/icons';
 
-const DateDialogComponent = ({ isOpen, onClose, onSelectDate, dates }) => {
+// Define props type
+interface DateDialogComponentProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectDate: (date: string) => void;
+  dates: string[];
+}
+
+const DateDialogComponent: React.FC<DateDialogComponentProps> = ({ isOpen, onClose, onSelectDate, dates }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleSearchChange = (event) => {
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
 
-  // Filtrage des dates en fonction de la requête de recherche, si la recherche est active
+  // Filter dates based on search query
   const filteredDates = searchQuery
     ? dates.filter((date) => date.toLowerCase().includes(searchQuery.toLowerCase()))
     : dates;
-  
+
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
   return (
-    <AlertDialog isOpen={isOpen} onClose={onClose}>
+    <AlertDialog isOpen={isOpen} onClose={onClose} leastDestructiveRef={cancelRef}>
       <AlertDialogOverlay>
         <AlertDialogContent>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
@@ -72,7 +82,7 @@ const DateDialogComponent = ({ isOpen, onClose, onSelectDate, dates }) => {
             </Box>
           </AlertDialogBody>
           <AlertDialogFooter>
-            <Button colorScheme="blue" onClick={onClose} ml={3}>
+            <Button colorScheme="blue" onClick={onClose} ml={3} ref={cancelRef}>
               Fermer
             </Button>
           </AlertDialogFooter>

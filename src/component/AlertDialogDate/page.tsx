@@ -11,7 +11,19 @@ import {
   Text,
 } from '@chakra-ui/react';
 
-const AlertDialogComponent = ({ isOpen, onClose, cancelRef, values }) => {
+interface AlertDialogComponentProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cancelRef: React.RefObject<HTMLButtonElement>;
+  values: {
+    message?: string;
+    Theme?: string;
+    Date?: string;
+    Avancement?: string;
+    Tâche?: string;
+  };
+}
+const AlertDialogComponent : React.FC<AlertDialogComponentProps> = ({ isOpen, onClose, cancelRef, values }) => {
   console.log('AlertDialog Values:', values);
   const safeValues = values || {};
 

@@ -3,9 +3,6 @@ import { unmarshall } from '@aws-sdk/util-dynamodb';
 
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 
-/*import AWS from 'aws-sdk';
-import {QueryCommand} from '@aws-sdk/client-dynamodb';
-const dynamoClient = new AWS.DynamoDB.DocumentClient();*/
 
 export default async function handler(req, res) {
   const { personId, date } = req.query;
